@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Emoji Tic-Tac-Toe</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(120deg, #89f7fe, #66a6ff);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .game-container {
+      text-align: center;
+    }
+    h1 {
+      color: #fff;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      gap: 10px;
+      margin: 20px auto;
+    }
+    .cell {
+      width: 100px;
+      height: 100px;
+      background: white;
+      border-radius: 12px;
+      font-size: 2.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .cell:hover {
+      background: #f1f2f6;
+    }
+    #status {
+      font-size: 1.2rem;
+      color: #fff;
+      margin-top: 15px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      background: #2d3436;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #636e72;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>Tic-Tac-Toe 😎🐱</h1>
+    <div id="board"></div>
+    <div id="status">Player 😎's turn</div>
+    <button onclick="resetGame()">Restart</button>
+  </div>
+
+  <script>
+    const board = document.getElementById("board");
+    const statusText = document.getElementById("status");
+    const emojis = ["😎", "🐱"]; // Player 1 and 2
+    let cells = [];
+    let currentPlayer = 0;
+    let gameOver = false;
+
+    // Create 9 cells
+    for (let i = 0; i < 9; i++) {
+      let cell = document.createElement("div");
+      cell.classList.add("cell");
+      cell.addEventListener("click", () => makeMove(cell, i));
+      board.appendChild(cell);
+      cells.push("");
+    }
+
+    function makeMove(cell, index) {
+      if (cells[index] !== "" || gameOver) return;
+      cells[index] = emojis[currentPlayer];
+      cell.textContent = emojis[currentPlayer];
+
+      if (checkWin()) {
+        statusText.textContent = `Player ${emojis[currentPlayer]} wins! 🎉`;
+        gameOver = true;
+        return;
+      }
+
+      if (cells.every(c => c !== "")) {
+        statusText.textContent = "It's a draw! 🤝";
+        gameOver = true;
+        return;
+      }
+
+      currentPlayer = 1 - currentPlayer; // Switch player
+      statusText.textContent = `Player ${emojis[currentPlayer]}'s turn`;
+    }
+
+    function checkWin() {
+      const winPatterns = [
+        [0,1,2],[3,4,5],[6,7,8], // rows
+        [0,3,6],[1,4,7],[2,5,8], // cols
+        [0,4,8],[2,4,6]           // diagonals
+      ];
+      return winPatterns.some(pattern => {
+        const [a,b,c] = pattern;
+        return cells[a] && cells[a] === cells[b] && cells[a] === cells[c];
+      });
+    }
+
+    function resetGame() {
+      cells = [];
+      board.innerHTML = "";
+      currentPlayer = 0;
+      gameOver = false;
+      statusText.textContent = `Player ${emojis[currentPlayer]}'s turn`;
+      for (let i = 0; i < 9; i++) {
+        let cell = document.createElement("div");
+        cell.classList.add("cell");
+        cell.addEventListener("click", () => makeMove(cell, i));
+        board.appendChild(cell);
+        cells.push("");
+      }
+    }
+  </script>
+</body>
+</html>
