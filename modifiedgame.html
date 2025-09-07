@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Emoji Tic-Tac-Toe</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fbc2eb, #a18cd1);
+      background-size: 400% 400%;
+      animation: gradientMove 10s ease infinite;
+    }
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .winner { @apply bg-gradient-to-r from-green-400 to-emerald-500 text-white shadow-2xl animate-bounce scale-110; }
+    .pop { animation: pop 0.4s ease; }
+    @keyframes pop {
+      0% { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+      60% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+  </style>
+</head>
+<body class="flex justify-center items-center min-h-screen">
+  <div class="game-container text-center space-y-6 w-full max-w-md">
+    <h1 class="text-4xl font-extrabold text-white drop-shadow-lg">🎮 Emoji Tic-Tac-Toe</h1>
+
+    <!-- Player name inputs -->
+    <div class="flex justify-center gap-2 text-sm text-white">
+      <input id="player1Name" type="text" placeholder="Player 1 name" class="rounded px-2 py-1 text-black" />
+      <input id="player2Name" type="text" placeholder="Player 2 name" class="rounded px-2 py-1 text-black" />
+      <button onclick="startSeries()" class="px-3 py-1 rounded bg-green-500 text-white font-bold">✔ Start</button>
+    </div>
+
+    <!-- Game board -->
+    <div id="board" class="grid grid-cols-3 gap-4 mx-auto sm:w-[300px] md:w-[360px]"></div>
+
+    <!-- Status -->
+    <div id="status" class="text-xl font-semibold text-white">Enter names & start</div>
+
+    <!-- Scoreboard -->
+    <div id="scoreboard" class="text-lg font-bold text-white">
+      😎: <span id="score1">0</span> | 🐱: <span id="score2">0</span>
+    </div>
+
+    <!-- Series -->
+    <div id="seriesStatus" class="text-lg font-bold text-yellow-200"></div>
+
+    <!-- Controls -->
+    <div class="flex justify-center gap-4">
+      <button onclick="resetGame()" class="px-5 py-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 text-white font-bold shadow-md hover:scale-105 transition">
+        🔄 Restart Match
+      </button>
+      <button onclick="toggleDarkMode()" class="px-5 py-2 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold shadow-md hover:scale-105 transition">
+        🌙 Toggle Dark
+      </button>
+    </div>
+  </div>
+
+  <canvas id="confetti" class="fixed inset-0 pointer-events-none"></canvas>
+
+  <script>
+    const board = document.getElementById("board");
+    const statusText = document.getElementById("status");
+    const emojis = ["😎", "🐱"]; 
+    let playerNames = ["Player 1", "Player 2"];
+    let cells = [];
+    let currentPlayer = 0;
+    let gameOver = false;
+    let scores = [0, 0];
+    let confettiInterval;
+    let seriesTarget = 3; // best-of-3 by default
+
+    function startSeries() {
+      const name1 = document.getElementById("player1Name").value.trim();
+      const name2 = document.getElementById("player2Name").value.trim();
+      if (name1) playerNames[0] = name1;
+      if (name2) playerNames[1] = name2;
+      scores = [0,0];
+      document.getElementById("score1").textContent = 0;
+      document.getElementById("score2").textContent = 0;
+      document.getElementById("seriesStatus").textContent = `${playerNames[0]} vs ${playerNames[1]} — Best of ${seriesTarget}`;
+      resetGame();
+    }
+
+    function makeMove(cell, index) {
+      if (cells[index] !== "" || gameOver) return;
+      cells[index] = emojis[currentPlayer];
+      cell.textContent = emojis[currentPlayer];
+      cell.classList.add("pop");
+
+      let winPattern = checkWin();
+      if (winPattern) {
+        statusText.textContent = `🎉 ${emojis[currentPlayer]} wins this match! 🏆`;
+        gameOver = true;
+        winPattern.forEach(i => document.querySelectorAll(".cell")[i].classList.add("winner"));
+        scores[currentPlayer]++;
+        document.getElementById(`score${currentPlayer+1}`).textContent = scores[currentPlayer];
+        launchConfetti();
+        checkSeriesWinner();
+        return;
+      }
+
+      if (cells.every(c => c !== "")) {
+        statusText.textContent = "🤝 It's a draw!";
+        gameOver = true;
+        return;
+      }
+
+      currentPlayer = 1 - currentPlayer;
+      statusText.textContent = `Player ${emojis[currentPlayer]}'s turn`;
+    }
+
+    function checkWin() {
+      const winPatterns = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6] 
+      ];
+      for (let pattern of winPatterns) {
+        const [a,b,c] = pattern;
+        if (cells[a] && cells[a] === cells[b] && cells[a] === cells[c]) return pattern;
+      }
+      return null;
+    }
+
+    function checkSeriesWinner() {
+      if (scores[0] >= Math.ceil(seriesTarget/2)) {
+        document.getElementById("seriesStatus").textContent = `🏆 ${playerNames[0]} (😎) wins the series! 🎉`;
+        launchConfetti();
+      } else if (scores[1] >= Math.ceil(seriesTarget/2)) {
+        document.getElementById("seriesStatus").textContent = `🏆 ${playerNames[1]} (🐱) wins the series! 🎉`;
+        launchConfetti();
+      }
+    }
+
+    function resetGame() {
+      cells = [];
+      board.innerHTML = "";
+      currentPlayer = 0;
+      gameOver = false;
+      statusText.textContent = `Player ${emojis[currentPlayer]}'s turn`;
+
+      for (let i = 0; i < 9; i++) {
+        let cell = document.createElement("div");
+        cell.className = "cell aspect-square bg-white dark:bg-gray-200 rounded-2xl flex justify-center items-center text-5xl cursor-pointer hover:scale-105 transition transform duration-200 shadow-md";
+        cell.addEventListener("click", () => makeMove(cell, i));
+        board.appendChild(cell);
+        cells.push("");
+      }
+      stopConfetti();
+    }
+
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle("dark");
+    }
+
+    // Confetti
+    function launchConfetti() {
+      const canvas = document.getElementById("confetti");
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      let particles = Array.from({length: 150}, () => ({
+        x: Math.random()*canvas.width,
+        y: Math.random()*canvas.height - canvas.height,
+        r: Math.random()*6+4,
+        d: Math.random()*Math.PI*2,
+        s: Math.random()*3+2,
+        color: `hsl(${Math.random()*360},100%,50%)`
+      }));
+
+      function draw() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        particles.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+        });
+        update();
+      }
+      function update() {
+        particles.forEach(p => {
+          p.y += p.s;
+          if (p.y > canvas.height) {
+            p.y = -10;
+            p.x = Math.random()*canvas.width;
+          }
+        });
+      }
+
+      stopConfetti();
+      confettiInterval = setInterval(draw, 20);
+      setTimeout(stopConfetti, 3000);
+    }
+
+    function stopConfetti() {
+      const canvas = document.getElementById("confetti");
+      const ctx = canvas.getContext("2d");
+      if (confettiInterval) clearInterval(confettiInterval);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+  </script>
+</body>
+</html>
+
